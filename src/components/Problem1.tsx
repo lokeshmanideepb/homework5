@@ -1,47 +1,60 @@
 import { useEffect, useState } from "react";
 
 // recursive Fibonacci implementation
-function fibonacci(n: number): number {
-  if (n <= 1) return n;
-  return fibonacci(n - 1) + fibonacci(n - 2);
+function fibonacci ( n: number ): number
+{
+  if ( n <= 1 ) return n;
+  return fibonacci( n - 1 ) + fibonacci( n - 2 );
 }
 
-export default function App() {
-  const [number, setNumber] = useState(35);
-  const [result, setResult] = useState<{
+export default function App ()
+{
+  const [ number, setNumber ] = useState( 35 );
+  const [ result, setResult ] = useState<{
     value: number;
     duration: number;
-  } | null>(null);
-  const [computing, setComputing] = useState(false);
-  const [worker, setWorker] = useState<Worker | null>(null);
+  } | null>( null );
+  const [ computing, setComputing ] = useState( false );
+  const [ worker, setWorker ] = useState<Worker | null>( null );
 
 
-  useEffect(() => {
+  useEffect( () =>
+  {
     // Initialize the worker
+    const newWorker = new Worker( new URL( "../utils/worker.ts", import.meta.url ) );
+    setWorker( newWorker );
 
     // Set up the message handler
+    newWorker.onmessage = ( e ) =>
+    {
+      const { value, duration } = e.data;
+      setResult( {
+        value: value,
+        duration: duration,
+      } );
+      setComputing( false );
+    };
 
 
     // Cleanup worker on unmount
-    return () => {};
-  }, []);
+    return () =>
+    {
+      newWorker.terminate();
+      setWorker( null );
+    };
+  }, [] );
 
-  const handleCompute = () => {
+  const handleCompute = () =>
+  {
     // TODO: This blocks the main thread!
     // Your task is to move this computation to a Web Worker
     // Use the skeleton worker.ts in utils folder
-
-    setComputing(true);
-    const startTime = performance.now();
-
-    const result = fibonacci(number);
-
-    const endTime = performance.now();
-    setResult({
-      value: result,
-      duration: endTime - startTime,
-    });
-    setComputing(false);
+    if ( worker )
+    {
+      setComputing( true );
+      setResult( null )
+      worker.postMessage( number );
+    }
   };
 
   return (
@@ -62,7 +75,7 @@ export default function App() {
           id="fibonacci-number"
           type="number"
           value={number}
-          onChange={(e) => setNumber(parseInt(e.target.value))}
+          onChange={( e ) => setNumber( parseInt( e.target.value ) )}
           style={{ margin: "10px 0" }}
           aria-label="fibonacci-number"
         />
@@ -83,7 +96,7 @@ export default function App() {
       {result && (
         <div>
           <p>Result: {result.value}</p>
-          <p>Time taken: {result.duration.toFixed(2)}ms</p>
+          <p>Time taken: {result.duration.toFixed( 2 )}ms</p>
         </div>
       )}
     </div>
